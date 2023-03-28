@@ -40,7 +40,8 @@ public class FiltroMonitoreo implements Filter {
 		
 		System.out.println("\nFiltroMonitoreo: "+ peticion.getMethod() + " " 
 		                  + peticion.getServletPath() + "?" + peticion.getQueryString() + " , Accept:" + peticion.getHeaders("Accept").nextElement() 
-				          +", Hilo " + Thread.currentThread().getId());
+				          +", Hilo " + Thread.currentThread().getId() + ", "
+				          +" Hilos actuales: " + Thread.activeCount());
 		
 		this.peticiones.add(peticionToString(peticion));
 		
@@ -64,7 +65,7 @@ public class FiltroMonitoreo implements Filter {
 			strPeticion += "? " + req.getQueryString();
 		}
 		
-		strPeticion += " ,\t Headers;[" ;
+		strPeticion += " ,\t Headers:[" ;
 		Enumeration<String> nomsHeaders = req.getHeaderNames();
 		while(nomsHeaders.hasMoreElements()) {
 			String nomHeaderI = nomsHeaders.nextElement();
