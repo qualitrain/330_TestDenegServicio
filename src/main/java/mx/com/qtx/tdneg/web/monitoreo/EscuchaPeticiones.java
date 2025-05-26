@@ -1,11 +1,11 @@
-package qtx.monitoreo;
+package mx.com.qtx.tdneg.web.monitoreo;
 
 import java.util.Date;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestEvent;
-import javax.servlet.ServletRequestListener;
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletRequestEvent;
+import jakarta.servlet.ServletRequestListener;
+import jakarta.servlet.annotation.WebListener;
 
 /**
  * Application Lifecycle Listener implementation class EscuchaPeticiones

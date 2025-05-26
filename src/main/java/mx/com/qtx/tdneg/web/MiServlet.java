@@ -1,4 +1,4 @@
-package qtx.web;
+package mx.com.qtx.tdneg.web;
 
 import java.io.IOException;
 import java.util.Date;
@@ -6,11 +6,11 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/Test")
 public class MiServlet extends HttpServlet {
@@ -26,11 +26,15 @@ public class MiServlet extends HttpServlet {
 		long idHilo = Thread.currentThread().getId();
 		actualizarPeticionesXhilo(idHilo);
 		
-		System.out.print("MiServelt.doGet: GET " + request.getServletPath() + "?" + request.getQueryString());
+		System.out.print("\t\tMiServelt.doGet: GET " + request.getServletPath() + "?" + request.getQueryString());
 		System.out.println(", ---> Hilo en Servidor:" + idHilo 
 							+ ", activeCount:" + Thread.activeCount());
 		
 		String cteAceptaMediaType = request.getHeader("accept");
+		if(cteAceptaMediaType.contains(",")) {
+			String[] arrMediaType = cteAceptaMediaType.split(",");
+			cteAceptaMediaType = arrMediaType[0];
+		}
 		switch(cteAceptaMediaType) {
 		case "application/json": 
 			response.setContentType("application/json");
