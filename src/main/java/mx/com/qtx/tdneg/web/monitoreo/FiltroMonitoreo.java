@@ -1,6 +1,14 @@
 package mx.com.qtx.tdneg.web.monitoreo;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -19,10 +27,16 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class FiltroMonitoreo implements Filter {
 	private List<String> peticiones;
-    public FiltroMonitoreo() {
-    }
+	private String contexto;
+	
+    public FiltroMonitoreo() {}
 
+	@Override
 	public void destroy() {
+		emitirResumenOperativoImpreso();
+	}
+
+	private void emitirResumenOperativo() {
 		System.out.println("-----------------------------------------------------------------------------------------------");
 
 		System.out.println("FiltroMonitoreo:Se procesaron "
@@ -33,7 +47,44 @@ public class FiltroMonitoreo implements Filter {
 			System.out.println(String.format("%5d ", i++) + strPetI);
 		}
 	}
+	
+	private void emitirResumenOperativoImpreso() {
+		String nomArchivo = getNomArchivo();
+		try (PrintWriter pw = new PrintWriter(new FileWriter(nomArchivo))){
+			pw.println("-----------------------------------------------------------------------------------------------");
+			pw.println("FiltroMonitoreo:Se procesaron "
+                    + this.peticiones.size() + " peticiones");
+	
+			int i=1;
+			for(String strPetI:this.peticiones) {
+				pw.println(String.format("%5d ", i++) + strPetI);
+			}
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
+	private String getNomArchivo() {
+//		System.getenv().forEach((k,v)->System.out.println(k + ":" + v));
+		String rutaTemporales = System.getenv("TEMP");
+	
+		LocalDateTime ahora = LocalDateTime.now();
+	    String nomArchivo = rutaTemporales + "\\" 
+	    							+ this.contexto + "_"
+		                            + this.getClass().getSimpleName() + "_" 
+									+ ahora.getYear() 
+									+ ahora.getMonthValue()
+									+ ahora.getDayOfMonth() 
+									+ ahora.getHour()
+									+ ahora.getMinute() 
+									+ ahora.getSecond()
+									+ ".txt";
+	    System.out.println("nomArchivo:" + nomArchivo);
+	    return nomArchivo;
+	}
+
+	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest peticion = (HttpServletRequest) request;
 		
@@ -54,8 +105,10 @@ public class FiltroMonitoreo implements Filter {
 				        + " milisegundos" + " Hilo " + Thread.currentThread().getId());
 	}
 
+	@Override
 	public void init(FilterConfig fConfig) throws ServletException {
     	this.peticiones = new Vector<>();
+    	this.contexto = (String) fConfig.getServletContext().getAttribute("contexto");
 	}
 	
 	private String peticionToString(HttpServletRequest req) {
