@@ -1,14 +1,9 @@
 package mx.com.qtx.tdneg.web.monitoreo;
 
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalField;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -88,8 +83,10 @@ public class FiltroMonitoreo implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest peticion = (HttpServletRequest) request;
 		
+		String queryString = peticion.getQueryString() == null ? "" : ("?" + peticion.getQueryString());
+
 		System.out.println("\nFiltroMonitoreo: "+ peticion.getMethod() + " " 
-		                  + peticion.getServletPath() + "?" + peticion.getQueryString() + " , Accept:" + peticion.getHeaders("Accept").nextElement() 
+		                  + peticion.getServletPath() + queryString + " , Accept:" + peticion.getHeaders("Accept").nextElement() 
 				          +", Hilo " + Thread.currentThread().getId() + ", "
 				          +" Hilos actuales: " + Thread.activeCount());
 		
@@ -116,6 +113,8 @@ public class FiltroMonitoreo implements Filter {
 		if(req.getQueryString() != null) {
 			strPeticion += "? " + req.getQueryString();
 		}
+		
+		strPeticion += " ,\t Origen:" + req.getRemoteAddr();
 		
 		strPeticion += " ,\t Headers:[" ;
 		Enumeration<String> nomsHeaders = req.getHeaderNames();

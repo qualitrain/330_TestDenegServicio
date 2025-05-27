@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/Test")
 public class MiServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static final int PAUSA_MAX_MILIS = 2000;
+	
 	private static long nPeticion;
 	private Map<Long,Integer> peticionesXhilo = new ConcurrentHashMap<>();
 	private Object lock = new Object();
@@ -25,61 +27,100 @@ public class MiServlet extends HttpServlet {
     public MiServlet() {
         super();
     }
-
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		synchronized(lock) {
 			nPeticion++;
-		}
-		
-//		mostrarCabecerasHttp(request);
+		}   	
 		long idHilo = Thread.currentThread().getId();
 		actualizarPeticionesXhilo(idHilo);
 		
-		String queryString = request.getQueryString() == null ? "" : ("?" + request.getQueryString());
-		System.out.print("\t\tMiServelt.doGet: GET " + request.getServletPath() + queryString);
-		System.out.println(" ---> Hilo en Servidor:" + idHilo 
-							+ ", activeCount (hilos activos):" + Thread.activeCount());
+		mostrarPeticionEHiloEjecutorServlet(req, idHilo);
+     	super.service(req, resp);
+    }
+
+    @Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		String mediaTypeSolicitado = getMediaTypeRequerido(request);
+		
+		switch(mediaTypeSolicitado) {
+			case "application/json"->{ 
+				generarRespuestaJSon(request, response);
+			}
+			case "text/plain" ->{
+				generarRespuestaTextoPlano(request, response);
+			}
+			case "text/html" ->{
+				generarRespuestaHtml(request, response);
+			}
+			default->{
+				generarRespuestaMediaTypeNoSoportado(response, mediaTypeSolicitado);
+			}
+		}
+		
+		hacerPausaAleatoria();
+	}
+
+	private void generarRespuestaMediaTypeNoSoportado(HttpServletResponse response, String mediaTypeSolicitado)
+			throws IOException {
+		response.getWriter()
+		.append("MediaType no soportado:" + mediaTypeSolicitado);
+	}
+
+	private void generarRespuestaHtml(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("text/html");
+		response.getWriter()
+				.append("<!DOCTYPE html><html><head>"
+						+ "<meta charset=\"ISO-8859-1\"><title>Mensaje</title>"
+						+ "</head><body>")
+				.append("<p>Respondiendo a una petición GET: ")
+		        .append(request.getContextPath() + " " + nPeticion + "</p>")
+				.append("</body></html>");
+	}
+
+	private void generarRespuestaTextoPlano(HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		response.setContentType("text/plain");
+		response.getWriter()
+				.append("Respondiendo a una petición GET: ")
+		        .append(request.getContextPath() + " " + nPeticion);
+	}
+
+	private void generarRespuestaJSon(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json");
+		response.getWriter()
+		        .append("{\"texto\":"
+		        		+ "Respondiendo a una petición GET: "
+		        		+ request.getContextPath()
+		        		+ "}");
+	}
+
+	private String getMediaTypeRequerido(HttpServletRequest request) {
 		String cteAceptaMediaType = request.getHeader("accept");
 		if(cteAceptaMediaType.contains(",")) {
 			String[] arrMediaType = cteAceptaMediaType.split(",");
 			cteAceptaMediaType = arrMediaType[0];
 		}
-		switch(cteAceptaMediaType) {
-		case "application/json": 
-			response.setContentType("application/json");
-			response.getWriter()
-			        .append("{\"texto\":"
-			        		+ "Respondiendo a una petición GET: "
-			        		+ request.getContextPath()
-			        		+ "}");
-			break;
-		case "text/plain":
-			response.setContentType("text/plain");
-			response.getWriter()
-		    		.append("Respondiendo a una petición GET: ")
-			        .append(request.getContextPath() + " " + nPeticion);
-			break;
-		case "text/html":
-			response.setContentType("text/html");
-			response.getWriter()
-		    		.append("<!DOCTYPE html><html><head>"
-		    				+ "<meta charset=\"ISO-8859-1\"><title>Mensaje</title>"
-		    				+ "</head><body>")
-		    		.append("<p>Respondiendo a una petición GET: ")
-			        .append(request.getContextPath() + " " + nPeticion + "</p>")
-					.append("</body></html>");
-			
-			break;
-		default:
-			response.getWriter()
-    		.append("MediaType no soportado:" + cteAceptaMediaType);
+		return cteAceptaMediaType;
+	}
 
-		}
+	private void mostrarPeticionEHiloEjecutorServlet(HttpServletRequest request, long idHilo) {
+		String queryString = request.getQueryString() == null ? "" : ("?" + request.getQueryString());
+		System.out.print("\t\tMiServelt.do"
+				+ capitalizar(request.getMethod())
+				+ ": "
+				+ request.getMethod()
+				+ " " + request.getServletPath() + queryString);
+		System.out.println(" ---> Hilo en Servidor:" + idHilo 
+							+ ", activeCount (hilos activos):" + Thread.activeCount());
+		
+//		mostrarCabecerasHttp(request);
+		
 		Date fechaNac = (Date) request.getAttribute("fechaNacimiento");
 		System.out.println("\t\t- Esta petición [" + nPeticion
-				+ "] nació " + fechaNac);
-		hacerPausaAleatoria();
+				           + "] nació " + fechaNac);
 	}
 
 	private void actualizarPeticionesXhilo(long idHilo) {
@@ -90,12 +131,11 @@ public class MiServlet extends HttpServlet {
 		else {
 			n++;
 			peticionesXhilo.put(idHilo, n);
-			
 		}
 	}
 
 	public void hacerPausaAleatoria(){
-		int milis = (int) (long)(Math.random()*17137) % 2000;
+		int milis = (int) (long)(Math.random()*17137) % PAUSA_MAX_MILIS;
 		System.out.println("\t\t- Pausa aleatoria de " + milis + " milisegundos");
 		try {
 			Thread.sleep(milis);
@@ -114,23 +154,27 @@ public class MiServlet extends HttpServlet {
 		}
 	}
 
+    @Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.getWriter()
         .append("Respondiendo a una petición POST: ")
         .append(request.getContextPath());
 	}
 
+    @Override
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.getWriter()
         .append("Respondiendo a una petición PUT: ")
         .append(request.getContextPath());
 	}
 
+    @Override
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.getWriter()
         .append("Respondiendo a una petición DELETE: ")
         .append(request.getContextPath());
 	}
+    
 	@Override
 	public void destroy() {
 		emitirEstadisticasOperativasImpresas();
@@ -188,6 +232,14 @@ public class MiServlet extends HttpServlet {
 									+ ".txt";
 	    System.out.println("nomArchivo:" + nomArchivo);
 	    return nomArchivo;
+	}
+	
+	public static String capitalizar(String cad) {
+	    if (cad == null || cad.isEmpty()) {
+	        return cad; // Retorna null o cadena vacía según el input
+	    }
+	    // Primera letra en mayúscula + resto en minúscula
+	    return cad.substring(0, 1).toUpperCase() + cad.substring(1).toLowerCase();
 	}
 
 }
