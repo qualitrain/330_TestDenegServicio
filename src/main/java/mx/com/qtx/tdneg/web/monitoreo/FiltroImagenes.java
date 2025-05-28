@@ -14,12 +14,15 @@ public class FiltroImagenes implements Filter {
 	private String imagenCensurada;
 	private String imagenReemplazo;
 
-    public FiltroImagenes() {
-    }
-
-	public void destroy() {
+    public FiltroImagenes() {}
+    
+	@Override
+	public void init(FilterConfig fConfig) throws ServletException {
+		imagenCensurada = "/img/gato.gif";
+		imagenReemplazo = "/img/censura.jpg";
 	}
 
+	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest peticion = (HttpServletRequest) request;
 		HttpServletResponse respuesta = (HttpServletResponse) response;
@@ -45,9 +48,7 @@ public class FiltroImagenes implements Filter {
 		}
 	}
 
-	public void init(FilterConfig fConfig) throws ServletException {
-		imagenCensurada = "/img/gato.gif";
-		imagenReemplazo = "/img/censura.jpg";
-	}
+	@Override
+	public void destroy() {	}
 
 }
